@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 
 namespace WebBanTra.API.Controllers
 {
@@ -40,6 +41,26 @@ namespace WebBanTra.API.Controllers
                 return BadRequest($"Không tồn tại Tin tức có Id = {id}");
             }
             return Ok(post);
+        }
+
+        [HttpGet]
+        [Route("GetNews/{slug}")]
+        public async Task<IActionResult> GetNewBySlug(string slug)
+        {
+            var post = await _context.TblNews.Where(p => p.Slug == slug).FirstOrDefaultAsync();
+            if (post == null)
+            {
+                return BadRequest($"Không tồn tại Tin tức có Slug = {slug}");
+            }
+            return Ok(post);
+        }
+
+        [HttpGet]
+        [Route("GetOtherPost/{id}")]
+        public async Task<IActionResult> GetOtherPost(int id)
+        {
+            var list = await _context.TblNews.Where(p => p.IsActive == 1 && p.Id != id).OrderByDescending(p => p.CreatedDate).Take(5).ToListAsync();
+            return Ok(list);
         }
 
         [HttpGet]

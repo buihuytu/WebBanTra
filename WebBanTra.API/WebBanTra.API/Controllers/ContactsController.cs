@@ -74,7 +74,7 @@ namespace WebBanTra.API.Controllers
 
                 _context.TblContacts.Add(contact);
                 await _context.SaveChangesAsync();
-                return Ok("Send Successfully");
+                return Ok(new { MessageStatus = 200, MessageCode = "Send Successfully" });
             }
             return BadRequest();
         }
