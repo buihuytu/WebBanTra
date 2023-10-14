@@ -37,7 +37,7 @@ namespace WebBanTra.API.Controllers
             var contact = await _context.TblContacts.Where(p => p.Id == id).FirstOrDefaultAsync();
             if (contact == null)
             {
-                return BadRequest($"Không tồn tại Liên hệ có Id = {id}");
+                return BadRequest(new { MessageStatus = 400, MessageCode = $"Không tồn tại Liên hệ có Id = {id}" });
             }
             return Ok(contact);
         }
@@ -60,7 +60,7 @@ namespace WebBanTra.API.Controllers
             }
             _context.TblContacts.Remove(contact);
             await _context.SaveChangesAsync();
-            return Ok("Deleted");
+            return Ok(new { MessageStatus = 200, MessageCode = "Deleted Successfully" });
         }
 
         [HttpPost]
@@ -95,7 +95,49 @@ namespace WebBanTra.API.Controllers
 
                 _context.Entry(contact).State= EntityState.Modified;
                 await _context.SaveChangesAsync();
-                return Ok("Rely Successfully");
+                return Ok(new { MessageStatus = 200, MessageCode = "Rely Successfully" });
+            }
+            return BadRequest();
+        }
+
+        [HttpGet(nameof(DelTrash))]
+        public async Task<IActionResult> DelTrash(int ID)
+        {
+            var contact = await _context.TblContacts.FindAsync(ID);
+            if (contact == null)
+            {
+                return BadRequest();
+            }
+            else if (ModelState.IsValid)
+            {
+                contact.IsDelete = 1;
+                contact.CreatedDate = (from c in _context.TblContacts where c.Id == ID select c.CreatedDate).FirstOrDefault();
+                contact.RepliedDate = DateTime.Now;
+
+                _context.Entry(contact).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return Ok(new { MessageStatus = 200, MessageCode = "DelTrash Successfully" });
+            }
+            return BadRequest();
+        }
+
+        [HttpGet(nameof(ReTrash))]
+        public async Task<IActionResult> ReTrash(int ID)
+        {
+            var contact = await _context.TblContacts.FindAsync(ID);
+            if (contact == null)
+            {
+                return BadRequest();
+            }
+            else if (ModelState.IsValid)
+            {
+                contact.IsDelete = 0;
+                contact.CreatedDate = (from c in _context.TblContacts where c.Id == ID select c.CreatedDate).FirstOrDefault();
+                contact.RepliedDate = DateTime.Now;
+
+                _context.Entry(contact).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return Ok(new { MessageStatus = 200, MessageCode = "DelTrash Successfully" });
             }
             return BadRequest();
         }

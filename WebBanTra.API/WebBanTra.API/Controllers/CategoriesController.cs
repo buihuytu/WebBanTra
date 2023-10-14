@@ -15,7 +15,7 @@ namespace WebBanTra.API.Controllers
             _context = context;
         }
 
-        [HttpGet] 
+        [HttpGet(nameof(GetAllCategories))] 
         public async Task<IActionResult> GetAllCategories()
         {
             var listTrash = await (from c in _context.TblCategories where c.IsDelete == 1 select c).AsNoTracking().ToListAsync();
@@ -38,7 +38,7 @@ namespace WebBanTra.API.Controllers
             var category = await _context.TblCategories.Where(p => p.Id == id).FirstOrDefaultAsync();
             if (category == null)
             {
-                return BadRequest($"Không tồn tại Thể loại có Id = {id}");
+                return BadRequest(new { MessageStatus = 200, MessageCode = $"Không tồn tại Thể loại có Id = {id}" });
             }
             return Ok(category);
         }
@@ -61,10 +61,10 @@ namespace WebBanTra.API.Controllers
             }
             _context.TblCategories.Remove(category);
             await _context.SaveChangesAsync();
-            return Ok("Deleted Successfully");
+            return Ok(new { MessageStatus = 200, MessageCode = "Deleted Successfully"});
         }
 
-        [HttpPost]
+        [HttpPost(nameof(CreateCategory))]
         public async Task<IActionResult> CreateCategory(TblCategory category)
         {
             if(ModelState.IsValid)
@@ -73,7 +73,7 @@ namespace WebBanTra.API.Controllers
                 CheckSlug check = new CheckSlug(_context);
                 if(!check.KiemTraSlug("Category", slug, null))
                 {
-                    return BadRequest("Thể loại đã tồn tại");
+                    return Ok(new { MessageStatus = 200, MessageCode = "Thể loại đã tồn tại" });
                 }
                 category.Slug = slug;
                 category.CreatedDate = DateTime.Now;
@@ -82,7 +82,7 @@ namespace WebBanTra.API.Controllers
 
                 _context.TblCategories.Add(category);
                 await _context.SaveChangesAsync();
-                return Ok("Add Successfully");
+                return Ok(new { MessageStatus = 200, MessageCode = "Add Successfully" });
             }
             return BadRequest();
         }
@@ -100,7 +100,7 @@ namespace WebBanTra.API.Controllers
                 CheckSlug check = new CheckSlug(_context);
                 if (!check.KiemTraSlug("Category", slug, null))
                 {
-                    return BadRequest("Thể loại đã tồn tại");
+                    return BadRequest(new { MessageStatus = 200, MessageCode = "Thể loại đã tồn tại" });
                 }
                 category.Slug = slug;
                 category.CreatedDate = (from c in _context.TblCategories where c.Id == ID select c.CreatedDate).FirstOrDefault();
@@ -109,7 +109,71 @@ namespace WebBanTra.API.Controllers
 
                 _context.Entry(category).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
-                return Ok("Edit Successfully");
+                return Ok(new { MessageStatus = 200, MessageCode = "Edit Successfully" });
+            }
+            return BadRequest();
+        }
+
+        [HttpGet(nameof(DelTrash))]
+        public async Task<IActionResult> DelTrash(int ID)
+        {
+            var category = await _context.TblCategories.FindAsync(ID);
+            if (category == null)
+            {
+                return BadRequest();
+            }
+            else if (ModelState.IsValid)
+            {
+                category.IsDelete = 1;
+                category.IsActive = 0;
+                category.CreatedDate = (from c in _context.TblCategories where c.Id == ID select c.CreatedDate).FirstOrDefault();
+                category.CreatedBy = (from c in _context.TblCategories where c.Id == ID select c.CreatedBy).FirstOrDefault();
+                category.UpdatedDate = DateTime.Now;
+
+                _context.Entry(category).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return Ok(new { MessageStatus = 200, MessageCode = "DelTrash Successfully" });
+            }
+            return BadRequest();
+        }
+
+        [HttpGet(nameof(ReTrash))]
+        public async Task<IActionResult> ReTrash(int ID)
+        {
+            var category = await _context.TblCategories.FindAsync(ID);
+            if (category == null)
+            {
+                return BadRequest();
+            }
+            else if (ModelState.IsValid)
+            {
+                category.IsDelete = 0;
+                category.CreatedDate = (from c in _context.TblCategories where c.Id == ID select c.CreatedDate).FirstOrDefault();
+                category.CreatedBy = (from c in _context.TblCategories where c.Id == ID select c.CreatedBy).FirstOrDefault();
+                category.UpdatedDate = DateTime.Now;
+
+                _context.Entry(category).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return Ok(new { MessageStatus = 200, MessageCode = "DelTrash Successfully" });
+            }
+            return BadRequest();
+        }
+
+        [HttpGet(nameof(ChangeStatus))]
+        public async Task<IActionResult> ChangeStatus(int ID)
+        {
+            var category = await _context.TblCategories.FindAsync(ID);
+            if(category == null)
+            {
+                return BadRequest();
+            }
+            else if (ModelState.IsValid)
+            {
+                category.IsActive = (category.IsActive == 1) ? 0 : 1;
+                category.UpdatedDate = DateTime.Now;
+                _context.Entry(category).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return Ok(new { MessageStatus = 200, MessageCode = "Change Active Successfully" });
             }
             return BadRequest();
         }

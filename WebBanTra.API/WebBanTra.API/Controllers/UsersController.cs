@@ -61,11 +61,11 @@ namespace WebBanTra.API.Controllers
             string fileName = user.Image;
             if(fileName != null)
             {
-                System.IO.File.Delete("D:\\Ki_2-Nam_3\\ThucTapChuyenNganh\\WebBanTra\\WebBanTra\\Public\\Admin\\Pictures\\user\\" + fileName);
+                System.IO.File.Delete("E:\\CNTTVA\\Nam4Ki1\\CNPM\\BTL\\WebBanTraAngular\\src\\assets\\admin-img\\user" + fileName);
             }
             _context.TblUsers.Remove(user);
             await _context.SaveChangesAsync();
-            return Ok("Deleted Successfully");
+            return Ok(new { MessageStatus = 200, MessageCode = "Deleted Successfully" });
         }
 
         [HttpPost]
@@ -93,7 +93,7 @@ namespace WebBanTra.API.Controllers
                 if(u.FileImage != null)
                 {
                     String fileName = avatar + u.FileImage.FileName.Substring(u.FileImage.FileName.LastIndexOf('.'));
-                    var path = Path.Combine("D:\\Ki_2-Nam_3\\ThucTapChuyenNganh\\WebBanTra\\WebBanTra\\Public\\Admin\\Pictures\\user", fileName);
+                    var path = Path.Combine("E:\\CNTTVA\\Nam4Ki1\\CNPM\\BTL\\WebBanTraAngular\\src\\assets\\admin-img\\user", fileName);
                     using (var stream = System.IO.File.Create(path)) 
                     {
                         await u.FileImage.CopyToAsync(stream);
@@ -106,7 +106,7 @@ namespace WebBanTra.API.Controllers
                 }
                 _context.TblUsers.Add(user);
                 await _context.SaveChangesAsync();
-                return Ok("Add Successfully");
+                return Ok(new { MessageStatus = 200, MessageCode = "Add Successfully" });
             }
             return BadRequest();
         }
@@ -137,7 +137,7 @@ namespace WebBanTra.API.Controllers
                 if (u.FileImage != null)
                 {
                     String fileName = avatar + u.FileImage.FileName.Substring(u.FileImage.FileName.LastIndexOf('.'));
-                    var path = Path.Combine("D:\\Ki_2-Nam_3\\ThucTapChuyenNganh\\WebBanTra\\WebBanTra\\Public\\Admin\\Pictures\\user", fileName);
+                    var path = Path.Combine("E:\\CNTTVA\\Nam4Ki1\\CNPM\\BTL\\WebBanTraAngular\\src\\assets\\admin-img\\user", fileName);
                     using (var stream = System.IO.File.Create(path))
                     {
                         await u.FileImage.CopyToAsync(stream);
@@ -151,10 +151,73 @@ namespace WebBanTra.API.Controllers
 
                 _context.Entry(user).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
-                return Ok("Edit Successfully");
+                return Ok(new { MessageStatus = 200, MessageCode = "Edit Successfully" });
             }
             return BadRequest();
         }
 
+        [HttpGet(nameof(DelTrash))]
+        public async Task<IActionResult> DelTrash(int ID)
+        {
+            var user = await _context.TblUsers.FindAsync(ID);
+            if (user == null)
+            {
+                return BadRequest();
+            }
+            else if (ModelState.IsValid)
+            {
+                user.IsDelete = 1;
+                user.IsActive = 0;
+                user.CreatedDate = (from c in _context.TblUsers where c.Id == ID select c.CreatedDate).FirstOrDefault();
+                user.CreatedBy = (from c in _context.TblUsers where c.Id == ID select c.CreatedBy).FirstOrDefault();
+                user.UpdatedDate = DateTime.Now;
+
+                _context.Entry(user).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return Ok(new { MessageStatus = 200, MessageCode = "DelTrash Successfully" });
+            }
+            return BadRequest();
+        }
+
+        [HttpGet(nameof(ReTrash))]
+        public async Task<IActionResult> ReTrash(int ID)
+        {
+            var user = await _context.TblUsers.FindAsync(ID);
+            if (user == null)
+            {
+                return BadRequest();
+            }
+            else if (ModelState.IsValid)
+            {
+                user.IsDelete = 0;
+                user.CreatedDate = (from c in _context.TblUsers where c.Id == ID select c.CreatedDate).FirstOrDefault();
+                user.CreatedBy = (from c in _context.TblUsers where c.Id == ID select c.CreatedBy).FirstOrDefault();
+                user.UpdatedDate = DateTime.Now;
+
+                _context.Entry(user).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return Ok(new { MessageStatus = 200, MessageCode = "DelTrash Successfully" });
+            }
+            return BadRequest();
+        }
+
+        [HttpGet(nameof(ChangeStatus))]
+        public async Task<IActionResult> ChangeStatus(int ID)
+        {
+            var user = await _context.TblUsers.FindAsync(ID);
+            if (user == null)
+            {
+                return BadRequest();
+            }
+            else if (ModelState.IsValid)
+            {
+                user.IsActive = (user.IsActive == 1) ? 0 : 1;
+                user.UpdatedDate = DateTime.Now;
+                _context.Entry(user).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return Ok(new { MessageStatus = 200, MessageCode = "Change Active Successfully" });
+            }
+            return BadRequest();
+        }
     }
 }
