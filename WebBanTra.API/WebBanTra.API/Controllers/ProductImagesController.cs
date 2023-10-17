@@ -31,7 +31,7 @@ namespace WebBanTra.API.Controllers
                           NameProduct = p.Name
                       };
             await list.ToListAsync();
-            return Ok(list);
+            return Ok(new { list = list });
         }
 
         [HttpDelete("productId/imageId")]

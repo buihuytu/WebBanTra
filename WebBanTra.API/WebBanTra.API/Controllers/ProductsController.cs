@@ -1,6 +1,7 @@
 ﻿using DoGiaDung.Library;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting;
 using System.Collections.Generic;
 
 namespace WebBanTra.API.Controllers
@@ -82,6 +83,49 @@ namespace WebBanTra.API.Controllers
         }
 
         [HttpGet]
+        [Route("GetProductList/pageNo/pageSize/sort")]
+        public async Task<IActionResult> GetAllProductsUI(int pageNo, int pageSize, int sort)
+        {
+            int countTrash = _context.TblProducts.Where(m => m.IsDelete == 1).Count();
+            var list = from p in _context.TblProducts
+                       join c in _context.TblCategories
+                       on p.CateId equals c.Id
+                       where p.IsDelete == 0
+                       where p.CateId == c.Id
+                       select new ProductCategory()
+                       {
+                           ProductId = p.Id,
+                           ProductName = p.Name,
+                           Slug = p.Slug,
+                           ProductImg = p.Image,
+                           CategoryName = c.Name,
+                           ProductPrice = p.Price,
+                           IsActive = p.IsActive,
+                           CreatedDate = p.CreatedDate, 
+                           Star = new Random().Next(0, 100)
+                       };
+            switch (sort)
+            {   
+                case 0:
+                    list = list.OrderByDescending(p => p.CreatedDate);
+                    break;
+                case 1:
+                    list = list.OrderByDescending(p => p.ProductPrice);
+                    break;
+                case 2:
+                    list = list.OrderBy(p => p.ProductPrice);
+                    break;
+                default:
+                    break;
+            }
+            
+            int countProduct = list.Count();
+            list = list.Skip((pageNo - 1) * pageSize).Take(pageSize);
+            await list.ToListAsync();
+            return Ok(new { countTrash = countTrash, countProduct = countProduct, list = list });
+        }
+
+        [HttpGet]
         [Route("Trash")]
         public async Task<IActionResult> GetTrash()
         {
@@ -109,6 +153,7 @@ namespace WebBanTra.API.Controllers
         public async Task<IActionResult> GetProductById(int id)
         {
             var product = await _context.TblProducts.Where(p => p.Id == id).FirstOrDefaultAsync();
+            
             if (product == null)
             {
                 return BadRequest($"Không tồn tại Sản phẩm có Id = {id}");
@@ -133,7 +178,8 @@ namespace WebBanTra.API.Controllers
                                   ProductImg = p.Image,
                                   CategoryName = c.Name,
                                   ProductPrice = p.Price,
-                                  IsActive = p.IsActive
+                                  IsActive = p.IsActive,
+                                  Star = new Random().Next(0, 100)
                               };
             await listProduct.ToListAsync();
             var list = await listProduct.Where(p => p.ProductName.Contains(name)).ToListAsync();
@@ -141,7 +187,7 @@ namespace WebBanTra.API.Controllers
         }
 
         [HttpGet]
-        [Route("GetProductByPriceRange/{page}/{min}/{max}")]
+        [Route("GetProductByPriceRange/page/min/max")]
         public async Task<IActionResult> GetProductByPriceRange(double min, double max, int page)
         {
             var listProduct = from p in _context.TblProducts
@@ -149,7 +195,7 @@ namespace WebBanTra.API.Controllers
                               on p.CateId equals c.Id
                               where p.IsDelete == 0
                               where p.CateId == c.Id && p.Price >= min && p.Price <= max
-                              orderby p.CreatedDate descending
+                              orderby p.Price ascending
                               select new ProductCategory()
                               {
                                   ProductId = p.Id,
@@ -163,7 +209,7 @@ namespace WebBanTra.API.Controllers
             int countProduct = listProduct.Count();
             listProduct = listProduct.Skip((page - 1) * 9).Take(9);
             await listProduct.ToListAsync();
-            return Ok(new { countProduct, listProduct });
+            return Ok(new { countProduct = countProduct, list = listProduct });
         }
 
         [HttpDelete("id")]
@@ -282,6 +328,107 @@ namespace WebBanTra.API.Controllers
                 return Ok("Edit Successfully");
             }
             return BadRequest();
+        }
+
+        [HttpGet]
+        [Route("GetProduct/{slug}")]
+        public async Task<IActionResult> GetProductBySlug(string slug)
+        {
+            var product = await (from p in _context.TblProducts
+                              join c in _context.TblCategories
+                              on p.CateId equals c.Id
+                              where p.IsDelete == 0 && p.Slug == slug
+                              orderby p.CreatedDate descending
+                              select new TblProduct()
+                              {
+                                  Id = p.Id,
+                                  Name = p.Name,
+                                  Slug = p.Slug,
+                                  Image = p.Image,
+                                  CateName = c.Name,
+                                  Description = p.Description,
+                                  Price = p.Price,
+                                  IsActive = p.IsActive,
+                                  Star = new Random().Next(0, 100)
+                              }).FirstOrDefaultAsync(); ;
+            if (product == null)
+            {
+                return Ok(new { MessageStatus = 404, MessageCode = $"Không tồn tại Sản phẩm có Slug = {slug}"});
+            }
+            return Ok(product);
+        }
+
+        [HttpGet]
+        [Route("GetOtherProduct/{id}")]
+        public async Task<IActionResult> GetOtherProduct(int id)
+        {
+            var list = from p in _context.TblProducts
+                       join c in _context.TblCategories
+                       on p.CateId equals c.Id
+                       where p.IsDelete == 0
+                       where p.CateId == c.Id && p.IsActive == 1 && p.Id != id
+                       orderby p.CreatedDate descending
+                       select new ProductCategory()
+                       {
+                           ProductId = p.Id,
+                           ProductName = p.Name,
+                           Slug = p.Slug,
+                           ProductImg = p.Image,
+                           CategoryName = c.Name,
+                           ProductPrice = p.Price,
+                           IsActive = p.IsActive,
+                           Star = new Random().Next(0, 100)
+                       };
+            list = list.Take(5);
+            await list.ToListAsync();
+            return Ok(list);
+        }
+
+        [HttpGet]
+        [Route("GetHotProduct")]
+        public async Task<IActionResult> GetHotProduct()
+        {
+            var list = from p in _context.TblProducts
+                       where p.IsDelete == 0
+                       orderby p.CreatedDate descending
+                       select new ProductCategory()
+                       {
+                           ProductId = p.Id,
+                           ProductName = p.Name,
+                           Slug = p.Slug,
+                           ProductImg = p.Image,
+                           ProductPrice = p.Price,
+                       };
+            list = list.Take(5);
+            await list.ToListAsync();
+            return Ok(new { list = list });
+        }
+
+        [HttpPost]
+        [Route("GetProductByCategory")]
+        public async Task<IActionResult> GetProductByCategory(int pageNo, int pageSize, List<int> ids)
+        {
+            var list = from p in _context.TblProducts
+                       join c in _context.TblCategories
+                       on p.CateId equals c.Id
+                       where p.IsDelete == 0
+                       where p.CateId == c.Id && p.IsActive == 1 && ids.Contains(p.CateId.Value)
+                       orderby p.CreatedDate descending
+                       select new ProductCategory()
+                       {
+                           ProductId = p.Id,
+                           ProductName = p.Name,
+                           Slug = p.Slug,
+                           ProductImg = p.Image,
+                           CategoryName = c.Name,
+                           ProductPrice = p.Price,
+                           IsActive = p.IsActive,
+                           Star = new Random().Next(0, 100)
+                       };
+            int countProduct = list.Count();
+            list = list.Skip((pageNo - 1) * pageSize).Take(pageSize);
+            await list.ToListAsync();
+            return Ok(new {countProduct = countProduct, list = list });
         }
     }
 }

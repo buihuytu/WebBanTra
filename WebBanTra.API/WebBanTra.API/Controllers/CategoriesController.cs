@@ -21,7 +21,7 @@ namespace WebBanTra.API.Controllers
             var listTrash = await (from c in _context.TblCategories where c.IsDelete == 1 select c).AsNoTracking().ToListAsync();
             int countTrash = listTrash.Count();
             var list = await (from c in _context.TblCategories where c.IsDelete != 1 select c).ToListAsync();
-            return Ok(new {countTrash, list});
+            return Ok(new {count = countTrash, list = list});
         }
 
         [HttpGet]

@@ -13,9 +13,13 @@ public partial class TblProduct
 
     public int? CateId { get; set; }
 
+    public string? CateName { get; set; }
+
     public int? Mass { get; set; }
 
     public int? Price { get; set; }
+
+    public int? Star { get; set; }
 
     public int? ProPrice { get; set; }
 

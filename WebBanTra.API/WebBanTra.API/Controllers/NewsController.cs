@@ -25,6 +25,18 @@ namespace WebBanTra.API.Controllers
         }
 
         [HttpGet]
+        [Route("GetNewsList/pageNo/pageSize")]
+        public async Task<IActionResult> GetAllNewsUI(int pageNo, int pageSize)
+        {
+            var countTrash = await _context.TblNews.Where(m => m.IsDelete == 1).CountAsync();
+            var list = _context.TblNews.Where(m => m.IsDelete != 1);
+            int totalNews = list.Count();
+            list = list.Skip((pageNo - 1) * pageSize).Take(pageSize);
+            await list.ToListAsync();
+            return Ok(new { countTrash = countTrash, totalNews = totalNews, list = list });
+        }
+
+        [HttpGet]
         [Route("GetTrash")]
         public async Task<IActionResult> GetTrash()
         {

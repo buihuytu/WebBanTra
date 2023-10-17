@@ -11,6 +11,7 @@
         public string? CategoryName { get; set;}
         public int? ProductPrice { get; set; }
         public int? IsActive { get; set; }
-
+        public int? Star { get; set; }
+        public DateTime? CreatedDate { get; set; }
     }
 }
