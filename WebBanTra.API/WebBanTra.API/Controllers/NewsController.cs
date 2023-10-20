@@ -94,11 +94,11 @@ namespace WebBanTra.API.Controllers
             string fileName = post.Image;
             if (fileName != null)
             {
-                System.IO.File.Delete("D:\\Ki_2-Nam_3\\ThucTapChuyenNganh\\WebBanTra\\WebBanTra\\Public\\Admin\\Pictures\\news\\" + fileName);
+                System.IO.File.Delete("D:\\2023-2024\\CDCNPM\\WebBanTraAngular\\src\\assets\\news\\" + fileName);
             }
             _context.TblNews.Remove(post);
             await _context.SaveChangesAsync();
-            return Ok("Deleted Successfully");
+            return Ok(new { MessageStatus = 200, MessageCode = "Delete Successfully" });
         }
 
         [HttpPost]
@@ -126,7 +126,7 @@ namespace WebBanTra.API.Controllers
                 if(n.FileImage != null)
                 {
                     String fileName = strSlug + n.FileImage.FileName.Substring(n.FileImage.FileName.LastIndexOf('.'));
-                    var path = Path.Combine("D:\\Ki_2-Nam_3\\ThucTapChuyenNganh\\WebBanTra\\WebBanTra\\Public\\Admin\\Pictures\\news", fileName);
+                    var path = Path.Combine("D:\\2023-2024\\CDCNPM\\WebBanTraAngular\\src\\assets\\news", fileName);
                     using (var stream = System.IO.File.Create(path))
                     {
                         await n.FileImage.CopyToAsync(stream);
@@ -139,7 +139,7 @@ namespace WebBanTra.API.Controllers
                 }
                 _context.TblNews.Add(post);
                 await _context.SaveChangesAsync();
-                return Ok("Add Successfully");
+                return Ok(new { MessageStatus = 200, MessageCode = "Add Successfully" });
             }
             return BadRequest();
         }
@@ -184,6 +184,70 @@ namespace WebBanTra.API.Controllers
                 _context.Entry(post).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
                 return Ok("Edit Successfully");
+            }
+            return BadRequest();
+        }
+
+        [HttpGet(nameof(DelTrash))]
+        public async Task<IActionResult> DelTrash(int ID)
+        {
+            var n = await _context.TblNews.FindAsync(ID);
+            if (n == null)
+            {
+                return BadRequest();
+            }
+            else if (ModelState.IsValid)
+            {
+                n.IsDelete = 1;
+                n.IsActive = 0;
+                n.CreatedDate = (from c in _context.TblNews where c.Id == ID select c.CreatedDate).FirstOrDefault();
+                n.CreatedBy = (from c in _context.TblNews where c.Id == ID select c.CreatedBy).FirstOrDefault();
+                n.UpdatedDate = DateTime.Now;
+
+                _context.Entry(n).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return Ok(new { MessageStatus = 200, MessageCode = "DelTrash Successfully" });
+            }
+            return BadRequest();
+        }
+
+        [HttpGet(nameof(ReTrash))]
+        public async Task<IActionResult> ReTrash(int ID)
+        {
+            var p = await _context.TblNews.FindAsync(ID);
+            if (p == null)
+            {
+                return BadRequest();
+            }
+            else if (ModelState.IsValid)
+            {
+                p.IsDelete = 0;
+                p.CreatedDate = (from c in _context.TblNews where c.Id == ID select c.CreatedDate).FirstOrDefault();
+                p.CreatedBy = (from c in _context.TblNews where c.Id == ID select c.CreatedBy).FirstOrDefault();
+                p.UpdatedDate = DateTime.Now;
+
+                _context.Entry(p).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return Ok(new { MessageStatus = 200, MessageCode = "DelTrash Successfully" });
+            }
+            return BadRequest();
+        }
+
+        [HttpGet(nameof(ChangeStatus))]
+        public async Task<IActionResult> ChangeStatus(int ID)
+        {
+            var p = await _context.TblNews.FindAsync(ID);
+            if (p == null)
+            {
+                return BadRequest();
+            }
+            else if (ModelState.IsValid)
+            {
+                p.IsActive = (p.IsActive == 1) ? 0 : 1;
+                p.UpdatedDate = DateTime.Now;
+                _context.Entry(p).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return Ok(new { MessageStatus = 200, MessageCode = "Change Active Successfully" });
             }
             return BadRequest();
         }

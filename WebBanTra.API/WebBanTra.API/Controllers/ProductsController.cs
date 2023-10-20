@@ -223,16 +223,16 @@ namespace WebBanTra.API.Controllers
             string fileName = product.Image;
             if (fileName != null)
             {
-                System.IO.File.Delete("D:\\Ki_2-Nam_3\\ThucTapChuyenNganh\\WebBanTra\\WebBanTra\\Public\\Admin\\Pictures\\products\\" + fileName);
+                System.IO.File.Delete("D:\\2023-2024\\CDCNPM\\WebBanTraAngular\\src\\assets\\products\\" + fileName);
             }
             var listImage = _context.TblProductImages.Where(pi => pi.IdProduct == id).ToList();
             foreach (var img in listImage)
             {
-                System.IO.File.Delete("D:\\Ki_2-Nam_3\\ThucTapChuyenNganh\\WebBanTra\\WebBanTra\\Public\\Admin\\Pictures\\product-images\\" + img.Name);
+                System.IO.File.Delete("D:\\2023-2024\\CDCNPM\\WebBanTraAngular\\src\\assets\\product-images\\" + img.Name);
             }
             _context.TblProducts.Remove(product);
             await _context.SaveChangesAsync();
-            return Ok("Deleted");
+            return Ok(new { MessageStatus = 200, MessageCode = "Delete Successfully" });
         }
 
         [HttpPost]
@@ -264,7 +264,7 @@ namespace WebBanTra.API.Controllers
                 if(p.FileImage != null)
                 {
                     String fileName = strSlug + p.FileImage.FileName.Substring(p.FileImage.FileName.LastIndexOf('.'));
-                    var path = Path.Combine("D:\\Ki_2-Nam_3\\ThucTapChuyenNganh\\WebBanTra\\WebBanTra\\Public\\Admin\\Pictures\\products", fileName);
+                    var path = Path.Combine("D:\\2023-2024\\CDCNPM\\WebBanTraAngular\\src\\assets\\products", fileName);
                     using (var stream = System.IO.File.Create(path))
                     {
                         await p.FileImage.CopyToAsync(stream);
@@ -277,7 +277,7 @@ namespace WebBanTra.API.Controllers
                 }
                 _context.TblProducts.Add(product);
                 await _context.SaveChangesAsync();
-                return Ok(product.Id);
+                return Ok(new { MessageStatus = 200, MessageCode = "Add Successfully", product.Id});
             }
             return BadRequest();
         }
@@ -312,7 +312,7 @@ namespace WebBanTra.API.Controllers
                 if (p.FileImage != null)
                 {
                     String fileName = strSlug + p.FileImage.FileName.Substring(p.FileImage.FileName.LastIndexOf('.'));
-                    var path = Path.Combine("D:\\Ki_2-Nam_3\\ThucTapChuyenNganh\\WebBanTra\\WebBanTra\\Public\\Admin\\Pictures\\products", fileName);
+                    var path = Path.Combine("D:\\2023-2024\\CDCNPM\\WebBanTraAngular\\src\\assets\\products", fileName);
                     using (var stream = System.IO.File.Create(path))
                     {
                         await p.FileImage.CopyToAsync(stream);
@@ -325,7 +325,7 @@ namespace WebBanTra.API.Controllers
                 }
                 _context.Entry(product).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
-                return Ok("Edit Successfully");
+                return Ok(new { MessageStatus = 200, MessageCode = "Edit Successfully" });
             }
             return BadRequest();
         }
@@ -429,6 +429,70 @@ namespace WebBanTra.API.Controllers
             list = list.Skip((pageNo - 1) * pageSize).Take(pageSize);
             await list.ToListAsync();
             return Ok(new {countProduct = countProduct, list = list });
+        }
+
+        [HttpGet(nameof(DelTrash))]
+        public async Task<IActionResult> DelTrash(int ID)
+        {
+            var p = await _context.TblProducts.FindAsync(ID);
+            if (p == null)
+            {
+                return BadRequest();
+            }
+            else if (ModelState.IsValid)
+            {
+                p.IsDelete = 1;
+                p.IsActive = 0;
+                p.CreatedDate = (from c in _context.TblProducts where c.Id == ID select c.CreatedDate).FirstOrDefault();
+                p.CreatedBy = (from c in _context.TblProducts where c.Id == ID select c.CreatedBy).FirstOrDefault();
+                p.UpdatedDate = DateTime.Now;
+
+                _context.Entry(p).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return Ok(new { MessageStatus = 200, MessageCode = "DelTrash Successfully" });
+            }
+            return BadRequest();
+        }
+
+        [HttpGet(nameof(ReTrash))]
+        public async Task<IActionResult> ReTrash(int ID)
+        {
+            var p = await _context.TblProducts.FindAsync(ID);
+            if (p == null)
+            {
+                return BadRequest();
+            }
+            else if (ModelState.IsValid)
+            {
+                p.IsDelete = 0;
+                p.CreatedDate = (from c in _context.TblProducts where c.Id == ID select c.CreatedDate).FirstOrDefault();
+                p.CreatedBy = (from c in _context.TblProducts where c.Id == ID select c.CreatedBy).FirstOrDefault();
+                p.UpdatedDate = DateTime.Now;
+
+                _context.Entry(p).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return Ok(new { MessageStatus = 200, MessageCode = "DelTrash Successfully" });
+            }
+            return BadRequest();
+        }
+
+        [HttpGet(nameof(ChangeStatus))]
+        public async Task<IActionResult> ChangeStatus(int ID)
+        {
+            var p = await _context.TblProducts.FindAsync(ID);
+            if (p == null)
+            {
+                return BadRequest();
+            }
+            else if (ModelState.IsValid)
+            {
+                p.IsActive = (p.IsActive == 1) ? 0 : 1;
+                p.UpdatedDate = DateTime.Now;
+                _context.Entry(p).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return Ok(new { MessageStatus = 200, MessageCode = "Change Active Successfully" });
+            }
+            return BadRequest();
         }
     }
 }
